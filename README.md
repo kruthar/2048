@@ -9,9 +9,17 @@ like tiles to each other, etc.
 To run this chrome extension you will of course need Chrome. Follow these steps:
 
 1. Open a fresh tab in your Chrome browser and navigate to chrome://extensions.
-2. Click the button labeled 'Load unpacked extension...', select this path to this repo on your local machine.
-3. In a second tab of your Chrome browser navigate to http://gabrielecirulli.github.io/2048/.
-4. Click on the small puzzle piece icon at the far right of your URL box.
+2. Ensure the 'Developer Mode' checkbox is checked.
+3. Click the button labeled 'Load unpacked extension...', select this path to this repo on your local machine.
+4. In a second tab of your Chrome browser navigate to http://gabrielecirulli.github.io/2048/.
+5. Click on the small puzzle piece icon at the far right of your URL box.
+
+To edit the extension:
+
+1. Make your code edits.
+2. Open a fresh tab in your Chrome browser and navigate to chrome://extensions.
+3. Under the 2048 Solver extension click the 'Reload' link.
+4. If you already have a tab open to http://gabrielecirulli.github.io/2048/ then you will have to refresh that page and reopen the extension.
 
 ##Current State
 
