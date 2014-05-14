@@ -54,6 +54,8 @@ function play(){
         console.log("play: " + next_move);
         move(next_move);
         play_timeout = setTimeout(function(){play();}, 300);
+    } else {
+        port.postMessage({action: "game_over"});
     }
 }
 
