@@ -1,0 +1,30 @@
+{
+  "manifest_version": 2,
+  "name": "2048 Solver",
+  "description": "An automated solver for the 2048 puzzle.",
+  "version": "1.0",
+  "permissions": [
+    "tabs",
+    "background"
+  ],
+  "page_action": {
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "scripts": [
+      "js/background.js",
+      "js/jquery-2.1.1.min.js"
+    ]
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://gabrielecirulli.github.io/2048/*",
+        "http://www.2048tile.co/*"],
+      "js": [
+        "js/jquery-2.1.1.min.js",
+        "js/grid-manipulator.js"
+      ]
+    }
+  ]
+}
