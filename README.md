@@ -23,6 +23,11 @@ To edit the extension:
 
 ##Current State
 
-*The extension currently allows you to manipulate the game through left, right, up and down buttons.
-*There is an optimize button which will print out statistics on the next best move based on empty cells remaining, and proximity of large tiles to corners
-*All relevant print outs can be seen in the console window of the 2048 tab.
+* The extension currently allows you to manipulate the game through left, right, up and down buttons.
+* There is an optimize button which will print out statistics on the next best move based on empty cells remaining, and proximity of large tiles to corners
+* All relevant print outs can be seen in the console window of the 2048 tab.
+
+##Known Issues
+
+* Sometimes after editing the extension, reloading it, and refreshing your 2048 tab, the extension icon is not in the URL box.
+- Simply click into the url box and press enter to navigate to the same page afresh.

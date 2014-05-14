@@ -2,6 +2,7 @@ var LEFT = 0;
 var UP = 1;
 var RIGHT = 2;
 var DOWN = 3;
+var play_timeout = null;
 
 chrome.runtime.onConnect.addListener(function(port){
     if(port.name == "2048connection"){
@@ -17,6 +18,14 @@ chrome.runtime.onConnect.addListener(function(port){
                     break;
                 case "optimize":
                     get_best_move();
+                    break;
+                case "play":
+                    console.log("play message");
+                    if(message.data.play){
+                        play();
+                    } else {
+                        clearTimeout(play_timeout);
+                    }
                     break;
                 default:
                     console.log("unknown action: " + message.action);
@@ -39,6 +48,12 @@ function execute_script(script){
     document.getElementById("2048-scripts").appendChild(div);
 }
 
+function play(){
+    console.log("play");
+    move(get_best_move());
+    play_timeout = setTimeout(function(){play();}, 1000);
+}
+
 function get_best_move(){
     var grids = [
         predict_move(LEFT),
@@ -47,14 +62,18 @@ function get_best_move(){
         predict_move(DOWN)
     ]
 
+    console.log(grids);
+
     // Find the move with the most empty cells after
     var maxEmpties = 0;
     var maxEmptiesDirection = 0;
     for(var i = 0; i < 4; i++){
-        var empties = get_num_empty_cells(grids[i]);
-        if(empties > maxEmpties){
-            maxEmpties = empties;
-            maxEmptiesDirection = i;
+        if(grids[i]){
+            var empties = get_num_empty_cells(grids[i]);
+            if(empties > maxEmpties){
+                maxEmpties = empties;
+                maxEmptiesDirection = i;
+            }
         }
     }
     console.log("optimized empties: " + maxEmptiesDirection + " with " + maxEmpties);
@@ -62,31 +81,34 @@ function get_best_move(){
     // Find the move with the larger cells closer to a corner
     var corners = get_blank_board();
     for(var k = 0; k < 4; k++){
-        for(var i = 0; i < 4; i++){
-            for(var j = 0; j < 4; j++){
-                //TODO: consider reducing the multiplier to the factor of 2,
-                // or not? maybe large numbers need the large weight.
-                corners[k][0] += (i + j) * grids[k][i][j];
-                corners[k][1] += ((3 - i) + j) * grids[k][i][j];
-                corners[k][2] += (i + (3 - j)) * grids[k][i][j];
-                corners[k][3] += ((3 - i) + (3 - j)) * grids[k][i][j];
+        if(grids[k]){
+            for(var i = 0; i < 4; i++){
+                for(var j = 0; j < 4; j++){
+                    //TODO: consider reducing the multiplier to the factor of 2,
+                    // or not? maybe large numbers need the large weight.
+                    corners[k][0] += (i + j) * grids[k][i][j];
+                    corners[k][1] += ((3 - i) + j) * grids[k][i][j];
+                    corners[k][2] += (i + (3 - j)) * grids[k][i][j];
+                    corners[k][3] += ((3 - i) + (3 - j)) * grids[k][i][j];
+                }
             }
+        } else {
+            corners[k] = null;
         }
     }
+
     var minCorner = 100000;
     var minCornerDirection = 0;
     for(var i = 0; i < 4; i++){
-        for(var j = 0; j < 4; j++){
-            if(corners[i][j] < minCorner){
-                minCorner = corners[i][j];
-                minCornerDirection = i;
+        if(corners[i]){
+            for(var j = 0; j < 4; j++){
+                if(corners[i][j] < minCorner){
+                    minCorner = corners[i][j];
+                    minCornerDirection = i;
+                }
             }
         }
     }
-    console.log("left: " + corners[0].join());
-    console.log("up: " + corners[1].join());
-    console.log("right: " + corners[2].join());
-    console.log("down: " + corners[3].join());
     console.log("optimized corners: " + minCornerDirection + " with " + minCorner);
     return maxEmptiesDirection;
 }
@@ -206,6 +228,10 @@ function predict_move(direction){
             console.log("unknown direction to predict: " + direction);
             break;
     }
+
+    if(boards_equal(abs_grid(grid), init_board())){
+        return null;
+    }
     return abs_grid(grid);
 }
 
@@ -226,7 +252,22 @@ function move(direction){
     script += "keyEvent.which = keyCode;";
     script += "document.body.dispatchEvent(keyEvent);";
     execute_script(script);
+}
 
+function boards_equal(grid, board){
+    var equal = true;
+    for(var i = 0; i < 4; i++){
+        for(var j = 0; j < 4; j++){
+            if(grid[i][j] != board[i][j]){
+                equal = false;
+                break;
+            }
+        }
+        if(equal){
+            break;
+        }
+    }
+    return equal;
 }
 
 function init_board(){
