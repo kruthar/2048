@@ -18,7 +18,7 @@ chrome.runtime.onConnect.addListener(function(p){
                     move(parseInt(message.data.direction));
                     break;
                 case "optimize":
-                    get_best_move();
+                    move(get_best_move());
                     break;
                 case "play":
                     console.log("play message");
@@ -64,7 +64,7 @@ function play(){
     if(next_move > -1){
         console.log("play: " + next_move);
         move(next_move);
-        play_timeout = setTimeout(function(){play();}, 300);
+        play_timeout = setTimeout(function(){play();}, 150);
     } else {
         port.postMessage({action: "game_over"});
     }
@@ -113,7 +113,7 @@ function get_best_move(){
         }
     }
 
-    var minCorner = 100000;
+    var minCorner = 9007199254740992;
     var minCornerDirection = -1;
     for(var i = 0; i < 4; i++){
         if(corners[i]){
@@ -126,7 +126,47 @@ function get_best_move(){
         }
     }
     console.log("optimized corners: " + minCornerDirection + " with " + minCorner);
-    return maxEmptiesDirection;
+
+    // Find the move with the most cells next to matching cells
+    var matches = [0, 0, 0, 0];
+    for(var k = 0; k < 4; k++){
+        if(grids[k]){
+            for(var i = 0; i < 4; i++){
+                for(var j = 0; j < 4; j++){
+                    if(grids[k][i][j] > 0){
+                        if(i > 0 && grids[k][i - 1][j] == grids[k][i][j]){
+                            matches[k]++;
+                        }
+                        if(i < 3 && grids[k][i + 1][j] == grids[k][i][j]){
+                            matches[k]++;
+                        }
+                        if(j > 0 && grids[k][i][j - 1] == grids[k][i][j]){
+                            matches[k]++;
+                        }
+                        if(j < 3 && grids[k][i][j + 1] == grids[k][i][j]){
+                            matches[k]++;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    var maxMatches = -1;
+    var maxMatchesDirection = -1;
+    for(var i = 0; i < 4; i++){
+        if(grids[i]){
+            if(matches[i] > maxMatches){
+                maxMatches = matches[i];
+                maxMatchesDirection = i;
+            }
+        }
+    }
+    console.log("optimized matches: " + maxMatchesDirection + " with " + maxMatches);
+
+    //return maxEmptiesDirection;
+    //return minCornerDirection;
+    return maxMatchesDirection
 }
 
 function get_num_empty_cells(grid){
