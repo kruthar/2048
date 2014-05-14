@@ -18,9 +18,7 @@
   },
   "content_scripts": [
     {
-      "matches": [
-        "http://gabrielecirulli.github.io/2048/*",
-        "http://www.2048tile.co/*"],
+      "matches": ["http://gabrielecirulli.github.io/2048/*"],
       "js": [
         "js/jquery-2.1.1.min.js",
         "js/grid-manipulator.js"
