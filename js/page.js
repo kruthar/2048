@@ -1,5 +1,4 @@
 var port;
-var play_status = false;
 
 chrome.tabs.query({active: true, currentWindow: true}, function(tabs){
     port = chrome.tabs.connect(tabs[0].id, {name: "2048connection"});
@@ -18,12 +17,22 @@ $("#optimizebutton").click(function(){
 });
 
 $("#playbutton").click(function(){
-    if(play_status){
-        $("#playbutton").html("play");
-        port.postMessage({action: "play", data: {play: false}});
-    } else {
-        $("#playbutton").html("pause");
-        port.postMessage({action: "play", data: {play: true}});
-    }
-    play_status = !play_status;
+    chrome.storage.local.get("2048_play_status", function(storage){
+        if(storage["2048_play_status"]){
+            $("#playbutton").html("play");
+            port.postMessage({action: "play", data: {play: false}});
+        } else {
+            $("#playbutton").html("pause");
+            port.postMessage({action: "play", data: {play: true}});
+        }
+        chrome.storage.local.set({"2048_play_status": !storage["2048_play_status"]});
+    });
 });
+
+$(document).ready(function(){
+    chrome.storage.local.get("2048_play_status", function(storage){
+        if(storage["2048_play_status"]){
+            $("#playbutton").html("pause");
+        }
+    });
+})

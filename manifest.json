@@ -5,7 +5,8 @@
   "version": "1.0",
   "permissions": [
     "tabs",
-    "background"
+    "background",
+    "storage"
   ],
   "page_action": {
     "default_popup": "popup.html"
