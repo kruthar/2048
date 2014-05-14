@@ -49,9 +49,12 @@ function execute_script(script){
 }
 
 function play(){
-    console.log("play");
-    move(get_best_move());
-    play_timeout = setTimeout(function(){play();}, 1000);
+    var next_move = get_best_move();
+    if(next_move > -1){
+        console.log("play: " + next_move);
+        move(next_move);
+        play_timeout = setTimeout(function(){play();}, 300);
+    }
 }
 
 function get_best_move(){
@@ -66,7 +69,7 @@ function get_best_move(){
 
     // Find the move with the most empty cells after
     var maxEmpties = 0;
-    var maxEmptiesDirection = 0;
+    var maxEmptiesDirection = -1;
     for(var i = 0; i < 4; i++){
         if(grids[i]){
             var empties = get_num_empty_cells(grids[i]);
@@ -98,7 +101,7 @@ function get_best_move(){
     }
 
     var minCorner = 100000;
-    var minCornerDirection = 0;
+    var minCornerDirection = -1;
     for(var i = 0; i < 4; i++){
         if(corners[i]){
             for(var j = 0; j < 4; j++){

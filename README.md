@@ -31,4 +31,4 @@ To edit the extension:
 ##Known Issues
 
 * Sometimes after editing the extension, reloading it, and refreshing your 2048 tab, the extension icon is not in the URL box.
-** Simply click into the url box and press enter to navigate to the same page afresh.
+  * Simply click into the url box and press enter to navigate to the same page afresh.
