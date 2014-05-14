@@ -3,10 +3,11 @@ var UP = 1;
 var RIGHT = 2;
 var DOWN = 3;
 var play_timeout = null;
+var port;
 
-chrome.runtime.onConnect.addListener(function(port){
-    if(port.name == "2048connection"){
-        console.log("connected");
+chrome.runtime.onConnect.addListener(function(p){
+    if(p.name == "2048connection"){
+        port = p;
         port.onMessage.addListener(function(message){
             switch(message.action){
                 case "init_board":
@@ -26,6 +27,9 @@ chrome.runtime.onConnect.addListener(function(port){
                     } else {
                         clearTimeout(play_timeout);
                     }
+                    break;
+                case "reset":
+                    document.getElementsByClassName("restart-button")[0].click();
                     break;
                 default:
                     console.log("unknown action: " + message.action);
@@ -70,7 +74,7 @@ function get_best_move(){
     console.log(grids);
 
     // Find the move with the most empty cells after
-    var maxEmpties = 0;
+    var maxEmpties = -1;
     var maxEmptiesDirection = -1;
     for(var i = 0; i < 4; i++){
         if(grids[i]){
@@ -268,7 +272,7 @@ function boards_equal(grid, board){
                 break;
             }
         }
-        if(equal){
+        if(!equal){
             break;
         }
     }
@@ -282,18 +286,21 @@ function init_board(){
     $(".game-container .tile-container .tile").each(function(index){
         var pos = tilePosRegex.exec($(this).attr("class"));
         var val = tileValueRegex.exec($(this).attr("class"));
-        if(grid[pos[1] - 1][pos[2] - 1] < val[1]){
-            grid[pos[1] - 1][pos[2] - 1] = val[1];
+        if(grid[pos[1] - 1][pos[2] - 1] < parseInt(val[1])){
+            grid[pos[1] - 1][pos[2] - 1] = parseInt(val[1]);
         }
     });
     return grid;
 }
 
 function pretty_print(grid){
-    for(var i = 0; i < 4; i++){
-        console.log(grid[0][i] + " " + grid[1][i] + " " + grid[2][i] + " " + grid[3][i]);
+    if(grid){
+        for(var i = 0; i < 4; i++){
+            console.log(grid[0][i] + " " + grid[1][i] + " " + grid[2][i] + " " + grid[3][i]);
+        }
+    }else {
+        console.log("non-move");
     }
-    console.log();
 }
 
 function get_blank_board(){
