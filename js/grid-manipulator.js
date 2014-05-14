@@ -37,8 +37,15 @@ chrome.runtime.onConnect.addListener(function(p){
             }
         });
         init_script_div();
+        check_game_over();
     }
 });
+
+function check_game_over(){
+    if (document.getElementsByClassName("game-message")[0].offsetParent !== null) {
+        port.postMessage({action: "game_over"});
+    }
+}
 
 function init_script_div(){
     var div = document.createElement('div');
