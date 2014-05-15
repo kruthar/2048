@@ -4,6 +4,10 @@ var RIGHT = 2;
 var DOWN = 3;
 var play_timeout = null;
 var port;
+var maxEmptiesWeight = 1;
+var minCornerWeight = 1;
+var minMatchesWeight = 1;
+var speed = 50;
 
 chrome.runtime.onConnect.addListener(function(p){
     if(p.name == "2048connection"){
@@ -28,6 +32,12 @@ chrome.runtime.onConnect.addListener(function(p){
                         clearTimeout(play_timeout);
                     }
                     break;
+                case "update_weights":
+                    get_weights();
+                    break;
+                case "update_speed":
+                    speed = message.data.speed;
+                    break;
                 case "reset":
                     document.getElementsByClassName("restart-button")[0].click();
                     break;
@@ -38,8 +48,30 @@ chrome.runtime.onConnect.addListener(function(p){
         });
         init_script_div();
         check_game_over();
+        get_weights();
+        get_speed();
     }
 });
+
+function get_speed(){
+    chrome.storage.local.get("2048_speed", function(storage){
+        speed = storage["2048_speed"];
+    });
+}
+
+function get_weights(){
+    chrome.storage.local.get(["2048_maxEmptiesWeight", "2048_minCornerWeight", "2048_minMatchesWeight"], function(storage){
+        if(storage["2048_maxEmptiesWeight"]){
+            maxEmptiesWeight = storage["2048_maxEmptiesWeight"];
+        }
+        if(storage["2048_minCornerWeight"]){
+            minCornerWeight = storage["2048_minCornerWeight"];
+        }
+        if(storage["2048_minMatchesWeight"]){
+            minMatchesWeight = storage["2048_minMatchesWeight"];
+        }
+    });
+}
 
 function check_game_over(){
     if (document.getElementsByClassName("game-message")[0].offsetParent !== null) {
@@ -64,7 +96,7 @@ function play(){
     if(next_move > -1){
         console.log("play: " + next_move);
         move(next_move);
-        play_timeout = setTimeout(function(){play();}, 150);
+        play_timeout = setTimeout(function(){play();}, 100 + (speed * 30));
     } else {
         port.postMessage({action: "game_over"});
     }
@@ -83,15 +115,19 @@ function get_best_move(){
     // Find the move with the most empty cells after
     var maxEmpties = -1;
     var maxEmptiesDirection = -1;
+    var maxEmptiesAverage = 0;
     for(var i = 0; i < 4; i++){
         if(grids[i]){
             var empties = get_num_empty_cells(grids[i]);
+            maxEmptiesAverage += empties;
             if(empties > maxEmpties){
                 maxEmpties = empties;
                 maxEmptiesDirection = i;
             }
         }
     }
+    maxEmptiesAverage -= maxEmpties;
+    maxEmptiesAverage /= 3;
     console.log("optimized empties: " + maxEmptiesDirection + " with " + maxEmpties);
 
     // Find the move with the larger cells closer to a corner
@@ -115,9 +151,11 @@ function get_best_move(){
 
     var minCorner = 9007199254740992;
     var minCornerDirection = -1;
+    var minCornerAverage = 0;
     for(var i = 0; i < 4; i++){
         if(corners[i]){
             for(var j = 0; j < 4; j++){
+                minCornerAverage += corners[i][j];
                 if(corners[i][j] < minCorner){
                     minCorner = corners[i][j];
                     minCornerDirection = i;
@@ -125,6 +163,8 @@ function get_best_move(){
             }
         }
     }
+    minCornerAverage -= minCorner;
+    minCornerAverage /= 3;
     console.log("optimized corners: " + minCornerDirection + " with " + minCorner);
 
     // Find the move with the most cells next to matching cells
@@ -134,17 +174,17 @@ function get_best_move(){
             for(var i = 0; i < 4; i++){
                 for(var j = 0; j < 4; j++){
                     if(grids[k][i][j] > 0){
-                        if(i > 0 && grids[k][i - 1][j] == grids[k][i][j]){
-                            matches[k]++;
+                        if(i > 0 && grids[k][i - 1][j] != 0){
+                            matches[k] += Math.abs(grids[k][i - 1][j] - grids[k][i][j]);
                         }
-                        if(i < 3 && grids[k][i + 1][j] == grids[k][i][j]){
-                            matches[k]++;
+                        if(i < 3 && grids[k][i + 1][j] != 0){
+                            matches[k] += Math.abs(grids[k][i + 1][j] - grids[k][i][j]);
                         }
-                        if(j > 0 && grids[k][i][j - 1] == grids[k][i][j]){
-                            matches[k]++;
+                        if(j > 0 && grids[k][i][j - 1] != 0){
+                            matches[k] += Math.abs(grids[k][i][j - 1] - grids[k][i][j]);
                         }
-                        if(j < 3 && grids[k][i][j + 1] == grids[k][i][j]){
-                            matches[k]++;
+                        if(j < 3 && grids[k][i][j + 1] != 0){
+                            matches[k] += Math.abs(grids[k][i][j + 1] - grids[k][i][j]);
                         }
                     }
                 }
@@ -152,21 +192,39 @@ function get_best_move(){
         }
     }
 
-    var maxMatches = -1;
-    var maxMatchesDirection = -1;
+    var minMatches = 9007199254740992;
+    var minMatchesDirection = -1;
+    var minMatchesAverage = 0;
     for(var i = 0; i < 4; i++){
         if(grids[i]){
-            if(matches[i] > maxMatches){
-                maxMatches = matches[i];
-                maxMatchesDirection = i;
+            minMatchesAverage += matches[i];
+            if(matches[i] < minMatches){
+                minMatches = matches[i];
+                minMatchesDirection = i;
             }
         }
     }
-    console.log("optimized matches: " + maxMatchesDirection + " with " + maxMatches);
+    minMatchesAverage -= minMatches;
+    minMatchesAverage /= 3;
+    console.log("optimized matches: " + minMatchesDirection + " with " + minMatches);
 
+    var score = [0, 0, 0, 0];
+    var maxScore = -1;
+    var maxScoreDirection = -1;
+    score[maxEmptiesDirection] += (1 - (maxEmptiesAverage / maxEmpties)) * maxEmptiesWeight;
+    score[minCornerDirection] += (1 - (minCorner / minCornerAverage)) * minCornerWeight;
+    score[minMatchesDirection] += (1 - (minMatches / minMatchesAverage)) * minMatchesWeight;
+
+    for(var i = 0; i < 4; i++){
+        if(grids[i] && score[i] > maxScore){
+            maxScore = score[i];
+            maxScoreDirection = i;
+        }
+    }
+    return maxScoreDirection;
     //return maxEmptiesDirection;
     //return minCornerDirection;
-    return maxMatchesDirection
+    //return minMatchesDirection;
 }
 
 function get_num_empty_cells(grid){

@@ -2,29 +2,59 @@
 <html>
   <head>
     <title>2048 Automated Solver</title>
+    <link type="text/css" rel="stylesheet" href="http://code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css" />
     <link type="text/css" rel="stylesheet" href="css/styles.css" />
   </head>
   <body>
-    <table id="display">
-      <tr>
-        <td></td>
-        <td><button id="upbutton" class="button" value="1">up</button></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td><button id="leftbutton" class="button" value="0">left</button></td>
-        <td><button id="optimizebutton">optimize</button></td>
-        <td><button id="rightbutton" class="button" value="2">right</button></td>
-      </tr>
-      <tr>
-        <td></td>
-        <td><button id="downbutton" class="button" value="3">down</button></td>
-        <td></td>
-      </tr>
-    </table>
-    <button id="playbutton">play</button>
-    <button id="resetbutton">reset</button>
+    <div id="header">
+      <a id="auto-link" class="header-link">&lt; Auto</a>
+      <a id="manual-link" class="header-link">Manual &gt;</a>
+    </div>
+    <div id="content">
+      <div id="manual-content" class="container">
+        <table id="display">
+          <tr>
+            <td></td>
+            <td><button id="upbutton" class="button" value="1">up</button></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><button id="leftbutton" class="button" value="0">left</button></td>
+            <td><button id="optimizebutton">optimize</button></td>
+            <td><button id="rightbutton" class="button" value="2">right</button></td>
+          </tr>
+          <tr>
+            <td></td>
+            <td><button id="downbutton" class="button" value="3">down</button></td>
+            <td></td>
+          </tr>
+        </table>
+      </div>
+      <div id="auto-content" class="container">
+        <button id="playbutton">play</button>
+        <button id="resetbutton">reset</button>
+        <table>
+          <tr>
+            <td>Speed:</td>
+            <td><div id="speed-slider" class="slider"></div></td>
+          </tr>
+          <tr>
+            <td>Empties:</td>
+            <td><div id="empties-slider" class="slider"></div></td>
+          </tr>
+          <tr>
+            <td>Corners:</td>
+            <td><div id="corners-slider" class="slider"></div></td>
+          </tr>
+          <tr>
+            <td>Matches:</td>
+            <td><div id="matches-slider" class="slider"></div></td>
+          </tr>
+        </table>
+      </div>
+    </div>
     <script src="js/jquery-2.1.1.min.js"></script>
+    <script src="js/jquery-ui.min.js"></script>
     <script src="js/page.js"></script>
    </body>
 </html>

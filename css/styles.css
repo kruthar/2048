@@ -1,3 +1,40 @@
+body{
+    width: 200px;
+}
+
+#header{
+    width:200px;
+    height:25px;
+}
+
+.header-link{
+    cursor: pointer;
+}
+
+#auto-link{
+    float: left;
+    display: none;
+}
+
+#manual-link{
+    float: right;
+}
+
+.container{
+    width: 200px;
+    height:200px;
+    float:left;
+}
+
+#manual-content{
+    display:none;
+}
+
+.slider{
+    width: 100px;
+    margin: 0 0 10px 0;
+}
+
 #display td{
     text-align: center;
 
