@@ -7,6 +7,7 @@ var port;
 var maxEmptiesWeight = 1;
 var minCornerWeight = 1;
 var minMatchesWeight = 1;
+var maxMergesWeight= 1;
 var speed = 50;
 
 chrome.runtime.onConnect.addListener(function(p){
@@ -18,7 +19,7 @@ chrome.runtime.onConnect.addListener(function(p){
                     pretty_print(init_board());
                     break;
                 case "move":
-                    pretty_print(predict_move(parseInt(message.data.direction)));
+                    pretty_print(predict_move(parseInt(message.data.direction)).grid);
                     move(parseInt(message.data.direction));
                     break;
                 case "optimize":
@@ -48,7 +49,7 @@ chrome.runtime.onConnect.addListener(function(p){
         });
         init_script_div();
         check_game_over();
-        get_weights();
+        //get_weights();
         get_speed();
     }
 });
@@ -108,7 +109,8 @@ function get_best_move(){
         predict_move(UP),
         predict_move(RIGHT),
         predict_move(DOWN)
-    ]
+    ];
+    var choices = [0, 0, 0, 0];
 
     console.log(grids);
 
@@ -118,7 +120,7 @@ function get_best_move(){
     var maxEmptiesAverage = 0;
     for(var i = 0; i < 4; i++){
         if(grids[i]){
-            var empties = get_num_empty_cells(grids[i]);
+            var empties = get_num_empty_cells(grids[i].grid);
             maxEmptiesAverage += empties;
             if(empties > maxEmpties){
                 maxEmpties = empties;
@@ -128,6 +130,7 @@ function get_best_move(){
     }
     maxEmptiesAverage -= maxEmpties;
     maxEmptiesAverage /= 3;
+    choices[maxEmptiesDirection]++;
     console.log("optimized empties: " + maxEmptiesDirection + " with " + maxEmpties);
 
     // Find the move with the larger cells closer to a corner
@@ -138,10 +141,10 @@ function get_best_move(){
                 for(var j = 0; j < 4; j++){
                     //TODO: consider reducing the multiplier to the factor of 2,
                     // or not? maybe large numbers need the large weight.
-                    corners[k][0] += (i + j) * grids[k][i][j];
-                    corners[k][1] += ((3 - i) + j) * grids[k][i][j];
-                    corners[k][2] += (i + (3 - j)) * grids[k][i][j];
-                    corners[k][3] += ((3 - i) + (3 - j)) * grids[k][i][j];
+                    corners[k][0] += (i + j) * grids[k].grid[i][j];
+                    corners[k][1] += ((3 - i) + j) * grids[k].grid[i][j];
+                    corners[k][2] += (i + (3 - j)) * grids[k].grid[i][j];
+                    corners[k][3] += ((3 - i) + (3 - j)) * grids[k].grid[i][j];
                 }
             }
         } else {
@@ -165,6 +168,7 @@ function get_best_move(){
     }
     minCornerAverage -= minCorner;
     minCornerAverage /= 3;
+    choices[minCornerDirection]++;
     console.log("optimized corners: " + minCornerDirection + " with " + minCorner);
 
     // Find the move with the most cells next to matching cells
@@ -173,18 +177,18 @@ function get_best_move(){
         if(grids[k]){
             for(var i = 0; i < 4; i++){
                 for(var j = 0; j < 4; j++){
-                    if(grids[k][i][j] > 0){
-                        if(i > 0 && grids[k][i - 1][j] != 0){
-                            matches[k] += Math.abs(grids[k][i - 1][j] - grids[k][i][j]);
+                    if(grids[k].grid[i][j] > 0){
+                        if(i > 0 && grids[k].grid[i - 1][j] != 0){
+                            matches[k] += Math.abs(grids[k].grid[i - 1][j] - grids[k].grid[i][j]);
                         }
-                        if(i < 3 && grids[k][i + 1][j] != 0){
-                            matches[k] += Math.abs(grids[k][i + 1][j] - grids[k][i][j]);
+                        if(i < 3 && grids[k].grid[i + 1][j] != 0){
+                            matches[k] += Math.abs(grids[k].grid[i + 1][j] - grids[k].grid[i][j]);
                         }
-                        if(j > 0 && grids[k][i][j - 1] != 0){
-                            matches[k] += Math.abs(grids[k][i][j - 1] - grids[k][i][j]);
+                        if(j > 0 && grids[k].grid[i][j - 1] != 0){
+                            matches[k] += Math.abs(grids[k].grid[i][j - 1] - grids[k].grid[i][j]);
                         }
-                        if(j < 3 && grids[k][i][j + 1] != 0){
-                            matches[k] += Math.abs(grids[k][i][j + 1] - grids[k][i][j]);
+                        if(j < 3 && grids[k].grid[i][j + 1] != 0){
+                            matches[k] += Math.abs(grids[k].grid[i][j + 1] - grids[k].grid[i][j]);
                         }
                     }
                 }
@@ -206,7 +210,26 @@ function get_best_move(){
     }
     minMatchesAverage -= minMatches;
     minMatchesAverage /= 3;
+    choices[minMatchesDirection]++;
     console.log("optimized matches: " + minMatchesDirection + " with " + minMatches);
+
+    var maxMerges = -1;
+    var maxMergesDirection = -1;
+    var maxMergesAverage = 0;
+    for(var i = 0; i < 4; i++){
+        if(grids[i]){
+            maxMergesAverage += grids[i].merges;
+            if(grids[i].merges > maxMerges){
+                maxMerges = grids[i].merges;
+                maxMergesDirection = i;
+            }
+        }
+    }
+    maxMergesAverage -= maxMerges;
+    maxMergesAverage /= 3;
+    choices[maxMergesDirection]++;
+    console.log("optimized merges: " + maxMergesDirection + " with " + maxMerges);
+
 
     var score = [0, 0, 0, 0];
     var maxScore = -1;
@@ -214,6 +237,7 @@ function get_best_move(){
     score[maxEmptiesDirection] += (1 - (maxEmptiesAverage / maxEmpties)) * maxEmptiesWeight;
     score[minCornerDirection] += (1 - (minCorner / minCornerAverage)) * minCornerWeight;
     score[minMatchesDirection] += (1 - (minMatches / minMatchesAverage)) * minMatchesWeight;
+    score[maxMergesDirection] += (1 - (maxMergesAverage / maxMerges)) * maxMergesWeight;
 
     for(var i = 0; i < 4; i++){
         if(grids[i] && score[i] > maxScore){
@@ -221,10 +245,21 @@ function get_best_move(){
             maxScoreDirection = i;
         }
     }
-    return maxScoreDirection;
+
+    var maxChoice = -1;
+    var maxChoiceDirection = -1;
+    for(var i = 0; i < 4; i++){
+        if(choices[i] > maxChoice){
+            maxChoiceDirection = i;
+            maxChoice = choices[i];
+        }
+    }
+    //return maxScoreDirection;
+    return maxChoiceDirection;
     //return maxEmptiesDirection;
     //return minCornerDirection;
     //return minMatchesDirection;
+    //return maxMergesDirection;
 }
 
 function get_num_empty_cells(grid){
@@ -241,6 +276,7 @@ function get_num_empty_cells(grid){
 
 function predict_move(direction){
     var grid = init_board();
+    var merges = 0;
     switch(direction){
         case LEFT:
             for(var i = 0; i < 4; i++){
@@ -253,6 +289,7 @@ function predict_move(direction){
                             if(grid[k][i] == 0){
                                 index = k;
                             } else if(grid[k][i] == value){
+                                merges += value;
                                 index = k;
                                 swap = value * -2;
                                 break;
@@ -277,6 +314,7 @@ function predict_move(direction){
                             if(grid[k][i] == 0){
                                 index = k;
                             } else if(grid[k][i] == value){
+                                merges += value;
                                 index = k;
                                 swap = value * -2;
                                 break;
@@ -301,6 +339,7 @@ function predict_move(direction){
                             if(grid[i][k] == 0){
                                 index = k;
                             } else if(grid[i][k] == value){
+                                merges += value;
                                 index = k;
                                 swap = value * -2;
                                 break;
@@ -325,6 +364,7 @@ function predict_move(direction){
                             if(grid[i][k] == 0){
                                 index = k;
                             } else if(grid[i][k] == value){
+                                merges += value;
                                 index = k;
                                 swap = value * -2;
                                 break;
@@ -346,7 +386,7 @@ function predict_move(direction){
     if(boards_equal(abs_grid(grid), init_board())){
         return null;
     }
-    return abs_grid(grid);
+    return {grid: abs_grid(grid), merges: merges};
 }
 
 function abs_grid(grid){
